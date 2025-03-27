@@ -13,9 +13,8 @@ DECLARE
     query_concep VARCHAR;
 
     BEGIN
-        
+        SELECT id_emplea ,nom_emplea, ape_emplea INTO rec_emplea FROM tab_emplea;
     END;
 $$
 
 
-SELECT * FROM tab_conceptos;

@@ -2,9 +2,34 @@ DROP TABLE IF EXISTS tab_novedades;
 DROP TABLE IF EXISTS tab_nomina;
 DROP TABLE IF EXISTS tab_emplea;
 DROP TABLE IF EXISTS tab_cargos;
-DROP TABLE IF EXISTS tab_conceptos;
 DROP TABLE IF EXISTS tab_pmtros;
+DROP TABLE IF EXISTS tab_conceptos;
 DROP TABLE IF EXISTS tab_meses;
+
+CREATE TABLE IF NOT EXISTS tab_conceptos
+(
+    id_concepto     DECIMAL(2,0)    NOT NULL,
+    nom_concepto    VARCHAR         NOT NULL  CHECK(LENGTH(nom_concepto)>=5),
+    ind_operacion   BOOLEAN         NOT NULL, -- TRUE SUMA / FALSE RESTA
+    ind_perio_pago  CHAR(1)         NOT NULL DEFAULT 'Q' CHECK(ind_perio_pago = 'Q' OR ind_perio_pago = 'M'), -- Q QUINCENA /M MENSUAL
+    neto_pagado     BOOLEAN         NOT NULL DEFAULT FALSE, --TRUE NETO PAGADO/ FALSE NO NETO PAGADO
+    val_porcent     DECIMAL(3,0)    NOT NULL CHECK(val_porcent >= 0), -- Por si el concepto se aplica con un porcentaje. Si es 0 no aplica.
+    val_fijo        DECIMAL(8,0)    NOT NULL CHECK(val_fijo >= 0), -- Por si el conbcepto debe llegar un valor fijo permanente. Puede cam,biarlo el usuario
+    ind_legal       BOOLEAN         NOT NULL, --TRUE OBLIGATORIO / FALSE NO OBLIGATORIO
+    PRIMARY KEY (id_concepto)
+);
+
+INSERT INTO tab_conceptos VALUES(1,'Salario Básico',TRUE,'Q',FALSE,0,0,TRUE);
+INSERT INTO tab_conceptos VALUES(2,'Auxilio de Transporte',TRUE,'Q',FALSE,0,0,TRUE);
+INSERT INTO tab_conceptos VALUES(3,'Entidad Prestadora de Salud (EPS)',FALSE,'M',FALSE,12,0,TRUE);
+INSERT INTO tab_conceptos VALUES(4,'Administradora de Pensión (AFP)',FALSE,'M',FALSE,16,0,TRUE);
+INSERT INTO tab_conceptos VALUES(5,'NETO PAGADO',FALSE,'Q',TRUE,0,0,TRUE);
+INSERT INTO tab_conceptos VALUES(6,'Bonificación por chismoso',TRUE,'M',FALSE,0,100000,FALSE);
+INSERT INTO tab_conceptos VALUES(7,'Horas Extras Diurnas',TRUE,'Q',FALSE,25,0,FALSE);
+INSERT INTO tab_conceptos VALUES(8,'Horas Extras Nocturna',TRUE,'Q',FALSE,75,0,FALSE);
+INSERT INTO tab_conceptos VALUES(9,'Horas Extras Festivas Diurnas',TRUE,'Q',FALSE,100,0,FALSE);
+INSERT INTO tab_conceptos VALUES(10,'Horas Extras Fetivas Nocturnas',TRUE,'Q',FALSE,150,0,FALSE);
+INSERT INTO tab_conceptos VALUES(11,'Descuento por Préstamo',FALSE,'M',FALSE,10,0,FALSE);
 
 -- SECCIÓN DE CREACIÓN DE TABLAS, PARA INICIAR EL PROCESO
 CREATE TABLE IF NOT EXISTS tab_pmtros
@@ -19,9 +44,13 @@ CREATE TABLE IF NOT EXISTS tab_pmtros
     mes_nomina      DECIMAL(2)      NOT NULL CHECK(mes_nomina >= 1 AND mes_nomina <= 12), --MES VIGENTE
     val_por_intces  DECIMAL(2,0)    NOT NULL DEFAULT 12, -- Vr. porcentaje de intereses a la cesantía
     num_diasmes     DECIMAL(2,0)    NOT NULL DEFAULT 30, -- Número de días del mes fiscal
-    PRIMARY KEY(id_empresa)
+    id_concep_sb    DECIMAL(2,0)    NOT NULL,
+    id_concep_at    DECIMAL(2,0)    NOT NULL,
+    PRIMARY KEY(id_empresa),
+    FOREIGN KEY(id_concep_sb) REFERENCES tab_conceptos(id_concepto),
+    FOREIGN KEY(id_concep_at) REFERENCES tab_conceptos(id_concepto)
 );
-INSERT INTO tab_pmtros VALUES(123456,'EMPRESA LA COSITA RICA','Q',1423500,200000,2,2025,1,12,30);
+INSERT INTO tab_pmtros VALUES(123456,'EMPRESA LA COSITA RICA','Q',1423500,200000,2,2025,1,12,30,1,2);
 
 CREATE TABLE IF NOT EXISTS tab_cargos
 (
@@ -93,31 +122,6 @@ CREATE INDEX idx_ape_emplea      ON tab_emplea(ape_emplea);
 CREATE INDEX idx_ind_estrato     ON tab_emplea(ind_estrato);
 CREATE INDEX idx_val_tipo_sangre ON tab_emplea(val_tipo_sangre);
 
-CREATE TABLE IF NOT EXISTS tab_conceptos
-(
-    id_concepto     DECIMAL(2,0)    NOT NULL,
-    nom_concepto    VARCHAR         NOT NULL  CHECK(LENGTH(nom_concepto)>=5),
-    ind_operacion   BOOLEAN         NOT NULL, -- TRUE SUMA / FALSE RESTA
-    ind_perio_pago  CHAR(1)         NOT NULL DEFAULT 'Q' CHECK(ind_perio_pago = 'Q' OR ind_perio_pago = 'M'), -- Q QUINCENA /M MENSUAL
-    neto_pagado     BOOLEAN         NOT NULL DEFAULT FALSE, --TRUE NETO PAGADO/ FALSE NO NETO PAGADO
-    val_porcent     DECIMAL(3,0)    NOT NULL CHECK(val_porcent >= 0), -- Por si el concepto se aplica con un porcentaje. Si es 0 no aplica.
-    val_fijo        DECIMAL(8,0)    NOT NULL CHECK(val_fijo >= 0), -- Por si el conbcepto debe llegar un valor fijo permanente. Puede cam,biarlo el usuario
-    ind_legal       BOOLEAN         NOT NULL, --TRUE OBLIGATORIO / FALSE NO OBLIGATORIO
-    PRIMARY KEY (id_concepto)
-);
-
-INSERT INTO tab_conceptos VALUES(1,'Salario Básico',TRUE,'Q',FALSE,0,0,TRUE);
-INSERT INTO tab_conceptos VALUES(2,'Auxilio de Transporte',TRUE,'Q',FALSE,0,0,TRUE);
-INSERT INTO tab_conceptos VALUES(3,'Entidad Prestadora de Salud (EPS)',FALSE,'M',FALSE,12,0,TRUE);
-INSERT INTO tab_conceptos VALUES(4,'Administradora de Pensión (AFP)',FALSE,'M',FALSE,16,0,TRUE);
-INSERT INTO tab_conceptos VALUES(5,'NETO PAGADO',FALSE,'Q',TRUE,0,0,TRUE);
-INSERT INTO tab_conceptos VALUES(6,'Bonificación por chismoso',TRUE,'M',FALSE,0,100000,FALSE);
-INSERT INTO tab_conceptos VALUES(7,'Horas Extras Diurnas',TRUE,'Q',FALSE,25,0,FALSE);
-INSERT INTO tab_conceptos VALUES(8,'Horas Extras Nocturna',TRUE,'Q',FALSE,75,0,FALSE);
-INSERT INTO tab_conceptos VALUES(9,'Horas Extras Festivas Diurnas',TRUE,'Q',FALSE,100,0,FALSE);
-INSERT INTO tab_conceptos VALUES(10,'Horas Extras Fetivas Nocturnas',TRUE,'Q',FALSE,150,0,FALSE);
-INSERT INTO tab_conceptos VALUES(11,'Descuento por Préstamo',FALSE,'M',FALSE,10,0,FALSE);
-
 CREATE TABLE IF NOT EXISTS tab_meses
 (
     id_mes          DECIMAL(2,0)    NOT NULL    CHECK(id_mes >= 1 AND id_mes <= 12),
@@ -154,9 +158,9 @@ CREATE TABLE IF NOT EXISTS tab_nomina
 
 CREATE TABLE IF NOT EXISTS tab_novedades
 (
-    ano_nomina         DECIMAL(4,0)    NOT NULL,
-    mes_nomina         DECIMAL(2,0)    NOT NULL,
-    per_nomina         DECIMAL(1,0)    NOT NULL,
+    ano_nomina      DECIMAL(4,0)    NOT NULL,
+    mes_nomina      DECIMAL(2,0)    NOT NULL,
+    per_nomina      DECIMAL(1,0)    NOT NULL,
     id_emplea       DECIMAL(10,0)   NOT NULL,
     id_concepto     DECIMAL(2,0)    NOT NULL,
     val_dias_trab   DECIMAL(2,0)    NOT NULL CHECK(val_dias_trab >= 1 AND val_dias_trab <= 30),
@@ -183,5 +187,3 @@ CREATE TABLE IF NOT EXISTS tab_users
     lastlogin   DATE    NOT NULL,
     PRIMARY KEY(email)
 );
-
-SELECT * FROM tab_novedades;

@@ -30,4 +30,6 @@ $$ LANGUAGE plpgsql;
 
 SELECT sp_listar_parametros()
 
+
 SELECT * FROM users;
+SELECT * FROM tab_pmtros;
